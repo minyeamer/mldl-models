@@ -1,2 +1,2 @@
-# mldl-models
-Dig into ML/DL Models with Papers and Code
+# MLDL Models
+- Dig into ML/DL models with papers and code
