@@ -275,10 +275,10 @@ modified SAM, modified PAN, Cross mini-Batch Normalization (modified existing me
   <table align="center" style="border:hidden!important;">
   <tr>
     <td>
-      <img src="../.media/yolov4/figure_5.png" width="80%" />
+      <img src="../.media/yolov4/figure_5.png"/>
     </td>
     <td>
-      <img src="../.media/yolov4/figure_6.png" width="80%" />
+      <img src="../.media/yolov4/figure_6.png"/>
     </td>
   </tr>
   </table>
@@ -302,10 +302,10 @@ modified SAM, modified PAN, Cross mini-Batch Normalization (modified existing me
   <table align="center" style="border:hidden!important;">
   <tr>
     <td>
-      <img src="../.media/yolov4/table_2.png" width="80%" />
+      <img src="../.media/yolov4/table_2.png"/>
     </td>
     <td>
-      <img src="../.media/yolov4/table_3.png" width="80%" />
+      <img src="../.media/yolov4/table_3.png"/>
     </td>
   </tr>
   </table>
@@ -318,10 +318,10 @@ modified SAM, modified PAN, Cross mini-Batch Normalization (modified existing me
   <table align="center" style="border:hidden!important;">
   <tr>
     <td>
-      <img src="../.media/yolov4/table_4_initial.png" width="80%" />
+      <img src="../.media/yolov4/table_4_initial.png"/>
     </td>
     <td>
-      <img src="../.media/yolov4/table_4.png" width="80%" />
+      <img src="../.media/yolov4/table_4.png"/>
     </td>
   </tr>
   </table>
@@ -331,10 +331,10 @@ modified SAM, modified PAN, Cross mini-Batch Normalization (modified existing me
   <table align="center" style="border:hidden!important;">
   <tr>
     <td>
-      <img src="../.media/yolov4/table_5_initial.png" width="80%" />
+      <img src="../.media/yolov4/table_5_initial.png"/>
     </td>
     <td>
-      <img src="../.media/yolov4/table_5.png" width="80%" />
+      <img src="../.media/yolov4/table_5.png"/>
     </td>
   </tr>
   </table>
@@ -351,6 +351,15 @@ CSPDarknet-53 모델에선 mini-batch를 줄여도 성능 차이가 나타나지
 
   <img src="../.media/yolov4/table_7.png" width="50%" />
 
+### 5. Results
+- 다른 객체 인식 SOTA와 비교했을 때, YOLOv4는 매우 빠르고 정확한 탐지 성능을 보여주었습니다.
+- 서로 다른 구조의 GPU 환경에서 추론 시간을 검증하기 위해 Maxwell, Pascal, Volta를 적용해 비교했습니다.
+
+### 6. Conclusions
+- 8-16GB VRAM의 전통적인 GPU 환경에서도 사용할 수 있으면서 빠르고 정확하기까지 한 SOTA 탐지기를 제시했습니다.
+- anchor 기반의 객체 인식에 대한 효과를 증명했으며,   
+  정확도를 높이기 위해 적용한 다양한 기법에 대한 연구 결과는 후속 연구에 있어 큰 도움이 될 것입니다.
+
 ---
 
 ## YOLOv7 Paper
@@ -361,5 +370,138 @@ CSPDarknet-53 모델에선 mini-batch를 줄여도 성능 차이가 나타나지
 <a href="https://arxiv.org/pdf/2207.02696v1.pdf"><button type="button" class="btn btn-primary">Paper Link</button></a>
 
 ### 1. Introduction
-- 
+- 실시간 객체 인식은 컴퓨터 비전 분야에서 잘 알려진 주제이며,   
+  이러한 작업은 모바일 기기의 CPU, GPU, 또는 NPU 등에서 수행됩니다.
+- 위와 같은 edge device에서는 다양한 연산 방식의 속도를 높이는데 주목하는데,   
+  해당 논문에서는 모바일 GPU 및 클라우드 내 edge GPU device에서 사용가능한 객체 탐지기를 제안합니다.
+- 최근의 연구에서는 edge CPU에서의 속도를 높이기 위한 목적의 MCUNet과 NanoDet,   
+  다양한 GPU에서 속도를 높이기 위한 YOLOX와 YOLOR 등이 존재하며,   
+  CPU 환경 모델의 기반으로는 MobileNet, ShuffleNet, GhostNet 등이 사용되고,   
+  GPU 환경 모델의 기반으로는 ResNet, DarkNet, DLA, CSPNet 등이 사용됩니다.
+- 하지만, 해당 논문에서는 추론 시간의 증가 없이 객체 인식의 정확도를 높일 수 있는 최적화 방식에 집중하여,   
+  trainable bag-of-freebies라는 최적화 모듈을 제시합니다.
+- 네트워크 학습에서 re-parameterization과 dynamic label assignemnt의 중요성이 강조되고 있는데,   
+  이 역시 다뤄지면서 동시에, 해당 방식을 사용함에 있어 발생한 문제에 대해 논의해 볼 것입니다.
+- re-parameterization의 경우 역전파 개념을 가지고 서로 다른 네트워크에서 적용시키기 위한 전략에 대해 분석하며,   
+  dynamic label assignment는 어떻게 dynamic target을 여러 브랜치에 할당할지에 대해 다뤄봅니다.
 
+### 2. Related work
+
+#### 2.1. Real-time object detectors
+- 객체 인식에서 SOTA는 주로 YOLO를 기반으로 하며, (1)빠른 네트워크 구조, (2)효과적인 feature integration,   
+  (3)정확한 탐지 기법, (4)robust loss function, (5)효과적인 label 할당 및 (6)학습 기법의 특징을 가집니다.
+- 해당 논문에서는 self-supervies 학습이나 knowledge distillation 보다는,   
+  위 (4),(5),(6)과 연관된 trainable bag-of-freebies를 다룹니다.
+
+#### 2.2. Model re-parameterization
+- model re-parameterization은 여러 계산 모듈을 하나의 추론 단계로 합치는 것으로,   
+  ensemble 중 module-level ensemble 및 model-level ensemble로 분류할 수 있습니다.
+- model-level ensemble에는 여러 모델과 여러 학습 데이터를 학습한 결과 weight를 평균내는 것과,   
+  서로 다른 반복 횟수 별 모델 가중치의 평균으로 동작하는 것입니다.
+- module-level ensemble은 인기있는 연구 주제로 하나의 모듈을 여러 브랜치 모듈로 나눠 학습하고,   
+  추론 과정에서 브랜치 모듈을 하나로 통합하는 것입니다.
+
+#### 2.3. Model scaling
+- model scaling은 컴퓨팅 환겨엥 맞춰 이미 설계된 모델을 늘리거나 축소시키는 것입니다.
+- 입력 이미지 크기, 레이어 수, 채널 수, feature pyramid 수 등의 요소를 사용하여,   
+  파라미터, 연산 능력, 추론 시간, 정확도 간에 최적의 trade-off를 수행합니다.
+- Network Architecture Search(NAS)가 대표적인 model scaling 기법으로,   
+  자동으로 환경에 맞춘 scaling 요소를 찾아낼 수 있지만, 높은 연산 비용이 발생하는 단점이 있습니다.
+- DenseNet, VoVNet 같이 합쳐진 모델은 scale을 조정할 때 일부 레이어의 입력 너비가 변경하는데,   
+  제안된 아키텍처가 concatenation-based model이기 때문에 새로운 복합 scaling 기법을 설계해야 합니다.
+
+### 3. Architecture
+
+#### 3.1. Extended efficient layer aggragation networks
+- 효과적인 아키텍처를 설계하는데 있어 주요 고려사항은 파라미터 수, 연산량, 연산 집적도 입니다.
+- Ma *et al.*는 메모리 접근 속도로부터 입력/출력 채널 비율, 아키텍처 브랜치 수,   
+  요소 별 연산에 따른 네트워크 추론 속도 변화를 분석했습니다.
+- Doller *et al.*는 model scaling 수행 시 활성화 함수를 추가로 고려했습니다.
+- CSPVoVNet은 VoVNet의 변형으로 서로 다른 가중치의 layer가 다양한 feature를 학습할 수 있도록   
+  gradient를 분석하며, 이것은 추론이 더 빠르고 정확해지는 것을 설명합니다.
+- 효율적인 네트워크를 설계하는 전략에 대한 고민 끝에 가장 짧거나 긴 gradient path를 제어하여,   
+  더 깊은 네트워크가 효과적으로 학습하고 수렴되게 할 수 있게 되었습니다.
+- ELAN에서 위와 같은 과정을 기반으로한 Extended-ELAN(E-ELAN) 또한 해당 논문에서 제시됩니다.
+- E-ELAN은 transition 계층의 변화 없이 단지 연산 블록의 구조만 변경시키지만,   
+  연산 계층의 모든 블록에 same group parameter와 channel multiplier를 적용시켜 볼 것입니다.
+
+#### 3.2. Model scaling for concatenation-based models
+- model scaling의 주 목적은 모델의 일부를 수정해 서로 다른 요구 속도에 맞게 scale을 조정하는 것입니다.
+- PlainNet 또는 ResNet과 같은 구조에서 scaling up 또는 scaling down이 실행되어도,   
+  입력 차수와 출력 차수가 변하지 않지만, concatenation-based 구조에서는 Figure 3과 같은 변화가 발생합니다.
+- 때문에, concatenation-based 모델에서 각각의 scaling 요소를 개별적으로 분석할 수 없기에,   
+  depth의 변화에 따라 output channel을 고려하는 것과 같은 복합적인 model scaling을 제안해야 합니다.
+- 제안될 복합 scaling 기법은 초기 설계 시의 특성을 유지하면서 최적의 구조를 유지할 수 있게 합니다.
+
+  <img src="../.media/yolov7/figure_3.png" width="80%">
+
+### 4. Trainable bag-of-freebies
+
+#### 4.1. Planned re-parameterized convolution
+- RepConv가 VGG에서 뛰어난 성능을 달성했지만, ResNet 및 DenseNet에 적용했을 시,   
+  정확도가 크게 감소했습니다.
+- re-parameterized convolution이 어떻게 다른 네트워크와 연결되는지 분석하기 위해,   
+  planned re-parameterized 모델을 설계했습니다.
+- RepConv와 다른 아키텍처와의 조합을 분석했을 때,   
+  RepConv의 identity connection이 ResNet의 잔차와 DenseNet의 concatenation을 파괴하여   
+  서로다른 feature 맵에 더 다양한 gradient를 제공한다는 것을 발견했습니다.
+- 이러한 이유로 RepConv를 identity connection 없이 설계했을 때,   
+  residual 및 concatenation 레이어가 re-parameterized convolution으로 대체됩니다.
+
+#### 4.2. Coarse for auxiliary and fine for lead loss
+- deep supervision은 DNN 학습에서 자주 사용되는 기술로,   
+  네트워크의 중간에 auxiliary head를 추가하고, 보조적인 loss를 지표로하여 얕은 네트워크를 구성하는 것입니다.
+- ResNet이나 DenseNet 같은 쉽게 수렴되는 아키텍처에서 deep supervision은,   
+  많은 작업에서 효과적으로 모델의 성능을 향상시킬 수 있습니다.
+- label assignment의 경우 과거엔 ground truch에 영향을 받아 규칙에 따라 hard label을 생성했지만,   
+  최근엔 예측 결과의 품질과 분포를 ground truth와 함께 고려하여 soft label을 생성에 대한 최적화를 수행합니다.
+- deep supervision은 auxiliary head나 lead head에 관계없이 대상을 학습해야 하는데,   
+  soft label을 두 가지 head에 어떻게 할당할 것인지에 의문을 가지게 되었습니다.
+- 이에 대한 해결책은 Figure 5에서 표현된 것과 같이, auxiliary head와 lead head를 분리하여,   
+  각각의 예측 결과와 ground truth를 활용해 label assignment를 수행하는 것입니다.
+- **lead head guided label assginer**는 주로 lead head의 예측 결과에 기반해 soft label을 생성하며,   
+  이러한 soft label은 auxiliary head 및 label head의 target training model로 사용됩니다.
+- **coarse-to-fine lead head guided label assigner**는 위와 동일하게 soft label을 생성하지만,   
+  그 과정에서 coarse label과 fine label이라는 두 가지의 soft label을 생성합니다.
+- find label은 기본적인 soft label이고, coarse label은 grid를 positive target으로 다루도록 생성됩니다.
+
+### 5. Experiments
+
+#### 5.1. Experimental setup
+- Microsoft COCO 데이터셋을 사용하여 객체 인식 실헙과 검증을 수행합니다.
+- 모든 모델은 pre-trained가 아닌 새로운 모델이며, 2017 데이터셋으로 SOTA 결과를 비교합니다.
+
+#### 5.2. Baselines
+
+<img src="../.media/yolov7/table_1.png" width="80%">
+
+- Table 1과 같이 이전 버전의 YOLO와 YOLOR을 baseline으로 선택하여 YOLOv7과 비교했습니다.
+- YOLOv4 대비 YOLOv7의 파라미터 수는 75%, 연산량은 36% 낮은 반면, AP는 1.5% 높게 나왔습니다.
+- YOLOR-CSP에 비교해도 파라미터 수가 43%, 연산량이 36% 적으면서, 0.4%의 AP 증가가 있었습니다.
+- tiny 모델과 클라우드 GPU 모델 역시 상대적으로 경량화된 구조에 같거나 높은 AP를 나타냈습니다.
+
+#### 5.3. Comparison with state-of-the-arts
+
+<img src="../.media/yolov7/table_2.png" width="80%">
+
+- Table 2와 같이 일반적인 GPU와 모바일 GPU에 대한 객체 인식 SOTA 모델을 비교했습니다.
+- speed와 accuracy는 trade-off 관계에 있는 것을 인지하고 비교를 진행했고,   
+  YOLOv7-tiny-SiLU와 YOLOv5-N6을 비교했을 때 127 FPS 더 빠르고 10.7% 더 정확했습니다.
+- YOLOv7-X의 경우 YOLOv5-X6와 비슷한 크기면서 31 FPS 더 빠른 속도를 보였습니다.
+- YOLOv7-D6의 속도는 YOLOR-E6와 비슷했지만, AP가 0.8% 증가했습니다.
+
+#### 5.4. Ablation study
+- 서로 다른 크기의 모델에 대해 scaling up한 결과를 비교했고,   
+  compound scaling 기법을 width만 증가시키는 다른 기법과 비교했을 때,   
+  적은 파라미터 수와 연산량에 비해 0.5%의 AP 상승이 확인되었습니다.
+- planned re-parameterized 모델을 검증하기 위해,   
+  concatenation-based 모델으로 3-stacked ELAN, residual-based model으로 CSPDarknet을 사용했고,   
+  planned re-parameterized 모델이 전반적으로 높은 AP를 보여줌을 확인했습니다.
+- lead head와 auxiliary head에 대한 label assignment를 비교했을 때,   
+  base 대비 전반적인 성능 향상이 있었으며, coarse label을 적용한 경우가 최고의 성능을 보였습니다.
+
+### 6. Conclusions
+- 새로운 실시간 객체 인식 아키텍처와 model scaling 기법을 제안했습니다.
+- 연구 과정에서 re-parameterized module 및 dynamic label assignment에 대한 문제점을 발견했고,   
+  객체 인식 정확도를 높이는 trainable bag-of-freebies 기법을 제안해 문제를 해결하려 했습니다.
+- YOLOv7는 SOTA를 달성했습니다.
