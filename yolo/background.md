@@ -4,6 +4,7 @@
 - [Introduction](#introduction)
 - [YOLOv1 Paper](#yolov1-paper)
 - [History of YOLO](#history-of-yolo)
+- [YOLOv4 Paper](#yolov4-paper)
 - [YOLOv7 Paper](#yolov7-paper)
 
 ---
@@ -12,6 +13,8 @@
 - 과거 [Dinut](https://github.com/minyeamer/dinut)이라는 식단 영양 분석 서비스를 제작한 적이 있었는데,   
   당시 객체 인식 모델로서 사용했던 YOLO에 대해 자세히 알아보고 싶은 취지를 가지고 해당 분석을 진행합니다.
 - 초기 버전의 YOLO 모델에 대한 논문을 알아보고, YOLOv1부터 YOLOv6까지의 변화를 정리해봅니다.
+- YOLO 모델 발전 과정을 알아보는 과정에서 중간 단계 모델에 대한 상세한 이해가 필요함을 느꼈고,   
+  가장 다양한 데이터 처리 및 추론 기법이 적용된 YOLOv4 모델의 논문을 확인했습니다.
 - 프로젝트 진행 당시의 YOLO 최신 버전은 v5였지만, 해당 모델에 대한 논문이 현재까지 존재하지 않는 점과,   
   2022년 8월인 현시점의 기준에서 YOLOv7까지 개발된 상태이기 때문에 최신 버전인 YOLOv7의 논문을 살펴봅니다.
 - 별도의 노트북 파일에서 YOLOv7에 대한 코드 분석을 수행합니다.
@@ -36,7 +39,7 @@
 - YOLO는 객체 인식을 단일 회귀 문제로 정의하여 한번에 bounding box 예측과 분류를 할 수 있고,   
   해당 방식은 아래 그림과 같이 단일 CNN 모델이 동시에 예측 및 분류 작업을 수행하는 것입니다.
 
-  <img src=".media/../../.media/yolov1_figure_1.png" width="30%">
+  <img src="../.media/yolov1/figure_1.png" width="50%">
 
 - YOLO는 Titan X GPU 환경에서 150 fps의 영상을 처리할 수 있을 정도로 빠르고,   
   전체 이미지를 한번에 분석하기 때문에 맥락을 이해할 수 있다는 장점이 있습니다.
@@ -60,7 +63,7 @@
   구조 설계에서 영향을 받은 GooLeNet의 inception 모듈을 $1x1$ 사이즈로 축소시켰습니다.
 - Fast YOLO의 경우 9개의 convolutional layer와 더 적은 수의 filter를 사용합니다.
 
-  <img src=".media/../../.media/yolov1_figure_3.png" width="70%">
+  <img src="../.media/yolov1/figure_3.png" width="80%">
 
 #### 2.2. Training
 - convolutional layer를 ImageNet의 1000개 분류를 가진 데이터셋로 사전 학습했고,   
@@ -110,7 +113,7 @@
 - R-CNN을 개선한 R-CNN Minus R이나 Fast R-CNN 또한 실시간으로 사용하기엔 부족한 모습을 보였고,   
   가장 높은 FPS를 보인 모델 조차 YOLO 대비 3배 낮은 FPS로 비슷한 정확도를 보였습니다.
 
-  <img src=".media/../../.media/yolov1_table_1.png" width="30%">
+  <img src="../.media/yolov1/table_1.png" width="50%">
 
 ### 5. Real-Time Detection In The Wild
 - YOLO의 빠르고 정확한 객체 인식기로서의 성능을 검증하기 위해 웹캠에 연결하여 실시간 성능을 확인했습니다.
@@ -202,6 +205,151 @@
 - [[Object Detection(객체 검출)] YOLO v1 : You Only Look Once](https://leedakyeong.tistory.com/entry/Object-Detection객체-검출-딥러닝-알고리즘-history-및-원리)
 - [YOLO v1 ~ v6 비교(1)](https://leedakyeong.tistory.com/entry/Object-Detection-YOLO-v1v6-비교)
 - [YOLO v1 ~ v6 비교(2)](https://leedakyeong.tistory.com/entry/Object-Detection-YOLO-v1v6-비교2)
+
+---
+
+## YOLOv4 Paper
+
+> **YOLOv4: Optimal Speed and Accuracy of Object Detection**   
+> CVPR 2020 · Alexey Bochkovskiy, Chien-Yao Wang, Hong-Yuan Mark Liao
+
+<a href="https://arxiv.org/pdf/2004.10934.pdf"><button type="button" class="btn btn-primary">Paper Link</button></a>
+
+### 1. Introduction
+- CNN 기반 객체 탐지기의 대부분은 주차 공간 탐색 같은 추천 시스템에만 활용됩니다.
+- 실시간 객체 인식 성능을 높인다면 단순히 추천 시스템에 도움을 주는 것이 아니라,   
+  stand-alone으로 작업을 수행하면서 사람의 작업을 덜어줄 수 있습니다.
+- 최신 인공신경망은 mini-batch와 많은 수의 GPU를 요구해 실시간으로 사용되지 않는데,   
+  이러한 문제점을 개선해 전통적인 GPU 환경에서도 실시간으로 동작할 수 있는 모델을 제안합니다.
+- 주요 목표는 생성 시스템에서 객체 인식의 처리 속도를 높이고 병렬로 최적화를 수행하는 것입니다.
+- 전통적인 GPU 환경에서도 실시간으로 학습하고 테스트하며, 객체 인식 결과를 확신할 수 있기를 희망하며,   
+  YOLOv4에 대한 결과는 아래 그림과 같습니다.
+
+  <img src="../.media/yolov4/figure_1.png" width="50%">
+
+## 2. Related Works
+
+### 2.1. Object Detection
+
+<img src="../.media/yolov4/figure_2.png" width="70%">
+
+- **Backbone**: input을 feature map으로 변형하는 부분으로, pre-trained 모델을 주로 사용합니다.
+- **Neck**: backbone과 head를 연결하는 부분으로, feature map에 대한 정제를 수행합니다.
+- **Head**: feature map의 location 작업이 진행됩니다. (predicting classes, bounding box 등)
+- **Dense Prediction**: prediction과 bounding box를 함께 수행합니다. (one-stage detector, YOLO 등)
+- **Sparse Prediction**: prediction과 bounding boxes를 구분하여 수행합니다. (Two-Stage Detector)
+
+### 2.2. Bag of Freebies (BoF)
+
+- BoF는 inference cost 증가 없이 accuracy를 향상시키기 위한 기법입니다.
+- **Data Augmentation**: input 이미지에 변화를 주어 환경 변화에 영향을 덜 받는 모델을 설계했습니다.
+- **Normalization**: one-hot 표현식으로 상관관계를 표시하기 어렵기 때문에 label smoothing을 활용했습니다.
+- **Object Function**: 전통적인 MSE 대신 ground truth를 기반으로 계산하는 IoU loss를 활용했습니다.
+
+### 2.3. Bag of Specials (BoS)
+
+- BoS는 inference cost를 조금만 증가시키면서 객체 감지에 대한 accuracy를 획기적으로 향상시킬 수 있는 기법입니다.
+- **SPP**: SPM을 CNN과 결합시켜 bag-of-word 대신 max-pooling 과정을 거치게하는 기법입니다.
+- **SPM**: 이미지 상에서 feature를 추출해 빈도수를 파악하는 기법입니다. (bag-of-word와 유사)
+- **Attention Module**: SE, SAM 등이 있습니다.
+- **Feature Integration**: SFAM, ASFF, BiFPN 등이 있습니다.
+- **Activation Function**: LReLU, PReLU, Mish 등이 있습니다.
+- **Post-Preprocessing**: NMS, DIoU NMS가 있습니다.
+
+## 3. Methodology
+
+### 3.1. Selection of architecture
+
+- CSPDarknet53 (backbone), SPP (additional module), PANet (neck), YOLOv3 (head)
+
+### 3.2. Selection of BoF and BoS
+
+- Swish, Mish (activations), DIoU (bbox regression loss), CutMix (data augmentation),   
+DropBlock (regularization method), CBN (normalization), CSP (skip-connections)
+
+### 3.3. Additional improvements
+
+- SAT (data augmentation), genetic algorithms (HPO),   
+modified SAM, modified PAN, Cross mini-Batch Normalization (modified existing methods)
+
+  <table align="center" style="border:hidden!important;">
+  <tr>
+    <td>
+      <img src="../.media/yolov4/figure_5.png" width="80%" />
+    </td>
+    <td>
+      <img src="../.media/yolov4/figure_6.png" width="80%" />
+    </td>
+  </tr>
+  </table>
+
+- **Mosaic**: 여러 이미지를 붙여서 한 장의 이미지로 사용해 적은 batch로 많은 이미지를 학습시키는 효과를 발생시킵니다.
+
+  <img src="../.media/yolov4/figure_3.png" width="50%">
+
+### 3.4. YOLOv4
+
+- BoF와 BoS를 backbone과 detector에 대해 각각 나누어 설정했습니다.
+
+## 4. Experiments
+
+### 4.2. Influence of different features on Classifier training
+
+- CSPResNeXt-50 backbone 기준에서,   
+  CutMix, Mosaic, Label Smoothing, Mish 적용 시 가장 높은 성능이 발생했습니다.
+- CSPDarknet-53 backbone에 동일한 기법을 적용했을 시 CSPResNeXt-50 보다 약간 떨어지는 성능을 보였습니다.
+
+  <table align="center" style="border:hidden!important;">
+  <tr>
+    <td>
+      <img src="../.media/yolov4/table_2.png" width="80%" />
+    </td>
+    <td>
+      <img src="../.media/yolov4/table_3.png" width="80%" />
+    </td>
+  </tr>
+  </table>
+
+### 4.3. Influence of different features on Detector training
+
+- Eliminate grid sensitivity, Mosaic, IoU threshold, Genetic algorithms, Optimized Anchors,   
+  그리고 GIoU 또는 CIoU를 적용했을 시 가장 높은 성능을 보였습니다.
+
+  <table align="center" style="border:hidden!important;">
+  <tr>
+    <td>
+      <img src="../.media/yolov4/table_4_initial.png" width="80%" />
+    </td>
+    <td>
+      <img src="../.media/yolov4/table_4.png" width="80%" />
+    </td>
+  </tr>
+  </table>
+
+- SPP와 SAM 모듈을 적용했을 때 가장 높은 성능을 보였습니다.
+
+  <table align="center" style="border:hidden!important;">
+  <tr>
+    <td>
+      <img src="../.media/yolov4/table_5_initial.png" width="80%" />
+    </td>
+    <td>
+      <img src="../.media/yolov4/table_5.png" width="80%" />
+    </td>
+  </tr>
+  </table>
+
+### 4.4. Influence of different backbones and pretrained weightings on Detector training
+
+- CSPResNeXt-50 모델이 CSPDarknet-53 모델보다 classification 성능은 더 좋았지만,   
+detection 성능은 CSPDarknet-53 모델이 더 우수한 것으로 확인되었습니다.
+
+  <img src="../.media/yolov4/table_6.png" width="50%" />
+
+- CSPResNeXt-50 모델은 mini-batch를 8에서 4로 줄일 시 성능 하락이 보이지만,
+CSPDarknet-53 모델에선 mini-batch를 줄여도 성능 차이가 나타나지 않았습니다.
+
+  <img src="../.media/yolov4/table_7.png" width="50%" />
 
 ---
 
