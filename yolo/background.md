@@ -2,6 +2,7 @@
 
 ## Index
 - [Introduction](#introduction)
+- [YOLO Summary](#yolo-summary)
 - [YOLOv1 Paper](#yolov1-paper)
 - [History of YOLO](#history-of-yolo)
 - [YOLOv4 Paper](#yolov4-paper)
@@ -17,8 +18,46 @@
   가장 다양한 데이터 처리 및 추론 기법이 적용된 YOLOv4 모델의 논문을 확인했습니다.
 - 프로젝트 진행 당시의 YOLO 최신 버전은 v5였지만, 해당 모델에 대한 논문이 현재까지 존재하지 않는 점과,   
   2022년 8월인 현시점의 기준에서 YOLOv7까지 개발된 상태이기 때문에 최신 버전인 YOLOv7의 논문을 살펴봅니다.
+- YOLO 논문을 분석하는 과정에서 이해하지 못한 부분을 다른 논문 리뷰를 참고하여 정리합니다.
 - 별도의 노트북 파일에서 YOLOv7에 대한 코드 분석을 수행합니다.
 - 해당 문서는 필요에 의하여 지속적으로 업데이트 됩니다.
+
+---
+
+## YOLO Summary
+
+### Object Detection
+- **Object Classification**: 이미지 내 single object의 class probability를 예측하는 작업입니다.
+- **Object Localization**: 이미지 내 single object에 대한 분류와 bounding box를 탐지하는 작업입니다.
+- **Object Detection**: 이미지 내 multiple object에 대한 분류와 bounding box를 탐지하는 작업입니다.
+- **One-Stage Detector**: 이미지 내 모든 위치를 object의 잠재영역으로 보고 각 후보영역에 대해 예측합니다.
+- **Two-Stage Detector**: localization > classification 순차적으로 수행하여 결과를 얻습니다.
+
+### YOLO
+- 이미지 전체로부터 얻은 feature map을 활용해 bbox를 예측하고 모든 클래스에 대한 확률을 계산합니다.
+- SxS grid size, object 수 B, 클래스 수 C에 대해 SxSx(B*5+C) 크기의 output tensor를 가집니다.   
+  (bbox 하나에 대해 $x,y,w,h,p_c$ 5개 output을 생성하며, $p_c$는 물체 내 bbox가 있을 확률입니다.)
+- YOLOv1 기준 GooLeNet의 구조를 활용하여 24 conv layer + 2 fc layer로 구성되어 있고,   
+  중간에 1x1 reduction layer를 추가해 conv layer의 증가로 인한 연산량 증가를 억제했습니다. ([참고](https://zzsza.github.io/data/2018/05/14/cs231n-cnn/))
+- 각각의 grid cell마다 ground truth와 예측한 bbox 간의 IoU가 가장 높은 bbox 1개만 사용
+- loss fuction은 MSE를 사용하며,   
+  (1) 모든 grid cell에서 예측한 B개의 bbox 좌표와 GT box 좌표 간 오차,   
+  (2) 모든 grid cell에서 예측한 B개의 $\text{Pr(Class|Object)}$와 GT 값,   
+  (3) 모든 grid cell의 $\text{Pr(Object)*IOU}$ 예측값과 GT box 값의 합으로 계산됩니다.
+- object 당 bbox 개수가 많이지는 것을 방지하기 위해 NMS(Non-Maximum Suppression)를 적용하여,   
+  클래스 별로 각 object에 대해 예측한 bbox 중에서 가장 예측력 좋은 bbox만을 남깁니다.
+- YOLOv2부터는 미리 정의된 anchor box를 사용하여 grid cell 마다 anchor box를 기반으로 예측을 수행합니다.
+- YOLO 모델의 전체적인 구조는 Backbone, FPN, Head로 구성됩니다.
+
+### Faster R-CNN
+- two-stage detector로, sliding window 마다 9개의 anchor box를 생성해 object 위치를 파악합니다.
+- CNN을 통해 얻은 feature map에서 앞서 예측된 box를 기반으로 classification, bbox 좌표를 예측합니다.
+- one-stage detector 대비 성능은 높지만, 속도가 매우 느린 단점이 있습니다.
+
+### References
+- [[Paper Review] You Only Look Once : Unified, Real-Time Object Detection, 이윤승](https://youtu.be/O78V3kwBRBk)
+- [[Paper Review] YOLO9000: Better, Faster, Stronger, 이윤승](https://youtu.be/vLdrI8NCFMs)
+- [PR-270: PP-YOLO: An Effective and Efficient Implementation of Object Detector](https://youtu.be/7v34cCE5H4k)
 
 ---
 
@@ -402,7 +441,7 @@ CSPDarknet-53 모델에선 mini-batch를 줄여도 성능 차이가 나타나지
   추론 과정에서 브랜치 모듈을 하나로 통합하는 것입니다.
 
 #### 2.3. Model scaling
-- model scaling은 컴퓨팅 환겨엥 맞춰 이미 설계된 모델을 늘리거나 축소시키는 것입니다.
+- model scaling은 컴퓨팅 환경에 맞춰 이미 설계된 모델을 늘리거나 축소시키는 것입니다.
 - 입력 이미지 크기, 레이어 수, 채널 수, feature pyramid 수 등의 요소를 사용하여,   
   파라미터, 연산 능력, 추론 시간, 정확도 간에 최적의 trade-off를 수행합니다.
 - Network Architecture Search(NAS)가 대표적인 model scaling 기법으로,   
