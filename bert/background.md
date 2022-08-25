@@ -2,8 +2,9 @@
 
 ## Index
 - [Introduction](#introduction)
+- [Transformer Summary](#transformer-summary)
 - [BERT Summary](#bert-summary)
-- [Attention Paper](#transformer-paper)
+- [Transformer Paper](#transformer-paper)
 - [BERT Paper](#bert-paper)
 - [BERT Variants](#bert-variants)
 
@@ -11,16 +12,114 @@
 
 ## Introduction
 - 자연어 처리에서 가장 유명한 언어 모델 중 하나인 BERT에 대해 다뤄보자는 취지로 해당 분석을 진행합니다.
-- BERT의 근간이 되는 Attention Mechanism에 대한 논문을 선행적으로 알아보고,   
-  BERT에 대한 논문을 살펴봅니다.
-- 한눈에 BERT에 대해 이해할 수 있도록 필요한 내용을 정리하여 요약합니다.
+- BERT의 근간이 되는 Attention Mechanism에 대한 논문을 선행적으로 알아보고, BERT에 대한 논문을 살펴봅니다.
+- Transformer와 BERT에 대해 한눈에 이해할 수 있도록 필요한 내용을 정리하여 요약합니다.
 - BERT로부터 파생된 다른 모델들을 비교하고 정리합니다.
 - 별도의 노트북 파일에서 Transformer 및 BERT에 대한 코드 분석을 수행합니다.
 - 해당 문서는 필요에 의하여 지속적으로 업데이트 됩니다.
 
 ---
 
-## Attention Paper
+## Transformer Summary
+- Encoder-Decoder 구조로 이루어져 있으며 각각에 대한 자세한 설명은 아래와 같습니다.
+- loss function으로 cross-entropy loss를 사용해 분포의 차이를 확인합니다.
+- optimizer로는 Adam을 사용하고, 과적합 방지를 위해 각 서브레이어 출력에 dropout이 적용됩니다.
+
+### Encoder
+
+<img src="https://jalammar.github.io/images/t/transformer_decoding_1.gif">
+
+- **Embedding**은 각각의 단어를 표현하는 벡터값으로, [문장 길이 x 임베딩 차원]으로 구성되어 있습니다.
+- **Self Attention**은 입력 행렬에 가중치 행렬을 곱한 Q, K, V를 가지고 유사도를 계산하며,   
+  (1)Q와 K^T 행렬의 내적 연산, (2)QK^T 행렬을 K 벡터 차원의 제곱근값으로 나누어 안정적인 gradient 도출,   
+  (3)softmax 함수를 사용해 유사도 값을 정규화, (4)앞선 결과인 스코어 행렬에 V 행렬을 곱해 어텐션(Z) 행렬 계산의   
+  순서를 가지며, 결과인 어텐션 행렬을 통해 단어가 문장 내 다른 단어와 얼마나 연관성이 있는지를 알 수 있습니다.
+- **Multi-Head Attention**은 문장 내에서 모호한 의미를 가진 단어가 잘못 해석될 경우를 보완하기 위해,   
+  서로 다른 가중치 행렬로 다수의 어텐션 행렬을 구하고, 이들을 concatenate한 행렬에 새로운 가중치 행렬을 곱하여,   
+  멀티 헤드 어텐션 결과를 도출합니다. (concatenate 후 행렬 사이즈를 되돌리기 위해 가중치 행렬을 곱합니다.)
+- **Positional Encoding**은 한번에 모든 단어를 병렬로 입력 받는 트랜스포머에서,   
+  문장 내 단어의 위치를 나타내기 위한 인코딩으로 입력 임베딩 결과에 대해 주로 사인파 함수를 곱해서 생성합니다.
+- **Feed Forward Network**는 2개의 dense layer와 ReLU 활성화 함수로 구성되며,   
+  정규화와 잔차 연결에 대한 add와 norm을 추가해 멀티 헤드 어텐션 간 입력값과 출력값을 연결합니다.
+
+#### Encoding Process
+1. 입력값을 입력 임베딩으로 변환한 다음 위치 인코딩을 추가하고, 가장 아래 있는 인코더 1의 입력값으로 공급합니다.
+2. 인코더 1은 입력값을 받아 멀티 헤드 어텐션의 서브 레이어에 값을 보내고, 결과로 어텐션 행렬을 출력합니다.
+3. 어텐션 행렬의 값을 피드 포워드 네트워크에 입력해 인코더 1에 대한 최종 결과를 출력합니다.
+4. 인코더 1의 출력값을 그 위에 있는 인코더 2에 입력값으로 제공합니다.
+5. 인코더 2에서도 이전과 동일한 방법을 통해 주어진 문장에 대한 인코더 표현 결과를 출력으로 제공합니다.
+
+### Decoder
+
+<img src="https://jalammar.github.io/images/t/transformer_decoding_2.gif">
+
+- 디코더에 대한 입력값과 인코더의 표현(출력값), 2개를 입력 데이터로 받습니다.
+- t=1에서 디코더의 입력값으로 문장의 시작을 알리는 \<sos>가 전달되며, 타깃 문장의 첫 번째 단어가 생성됩니다.
+- t=2에서 t-1 디코더에서 생성한 단어를 추가해 다음 단어를 생성하고,   
+  디코더에서 \<eos> 토큰이 생성될 때까지 같은 과정을 반복하며 타깃 문장을 생성합니다.
+- 디코더에서도 입력값을 바로 입력하지 않고 위치 인코딩을 추가한 값을 출력 임베딩에 더해 입력값으로 사용합니다.
+- **Masked Multi-Head Attention**은 디코더가 이전 단계에서 생성한 단어만 입력으로 넣도록,   
+  아직 예측하지 않은 오른쪽의 모든 단어를 $-\infin$에 해당하는 매우 작은 값으로 마스킹을 적용합니다.
+- **Encoder-Decoder Attention Layer**에서는,   
+  인코더의 표현값 R과 마스크된 멀티 헤드 어텐션의 결과 M에 대해 상호작용이 발생하며,   
+  M은 Q를, R은 K, V를 생성하는데 활용되어 타깃 단어가 입력 문장의 모든 단어와 얼마나 유사한지 계산합니다.
+- **Linear and Softmax Layer**에서는 최상위 디코더에서 얻은 출력 값이 전달되어,   
+  logit을 확률값으로 변환되고 디코더에서 가장 높은 확률값을 갖는 인덱스의 단어를 출력합니다.
+
+#### Decoding Process
+1. 디코더에 대한 입력 문장을 임베딩 행렬로 변환하고, 위치 인코딩 정보를 추가해 디코더 1에 입력합니다.
+2. 디코더 1은 입력값을 받아 마스크된 멀티 헤드 어텐션 레이어에 보내고, 출력으로 어텐션 행렬 M을 반환합니다.
+3. 어텐션 행렬 M과 인코딩 표현 R을 멀티 헤드 어텐션의 입력으로 넣어, 새로운 어텐션 행렬을 생성합니다.
+4. 인코더-디코더 어텐션 레이어에서 출력한 어텐션 행렬을 피드 포워드 네트워크에 입력해 디코더의 표현을 출력합니다.
+5. 디코더 1의 출력값을 다음 디코더 2의 입력값으로 전달하면서 동일한 방법으로 타깃 문장에 대한 표현을 반환합니다.
+6. 최종적으로 타깃 문장의 디코더 표현을 선형 및 소프트맥스 레이어에 입력해 가장 높은 확률값을 갖는 단어를 얻습니다.
+
+### References
+- [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)
+- [구글 BERT의 정석, Sudharsan Ravichandiran](https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=281761569&start=slayer)
+
+---
+
+## BERT Summary
+- BERT는 인코더-디코더 구조의 트랜스포머 모델에서 인코더 부분만 사용합니다.
+- 인코더 레이어 L, 어텐션 헤드 A, 은닉 유닛 H에 대해,   
+  BERT_base는 (L=12, A=12, H=768), BERT_large는 (L=24, A=16, H=1024) 크기를 가집니다.
+- 거대한 말뭉치에 대해 MLM과 NSP 태스크로 사전 학습한 가중치를 새로운 태스크에 적용할 수 있습니다.
+
+### BERT Embedding
+- BERT의 입력 데이터는 토큰 임베딩, 세그먼트 임베딩, 위치 임베딩의 합으로 표현됩니다.
+- **Token Embedding**은 첫 번째 문장의 시작 부분에 [CLS] 토큰을, 모든 문장의 끝에 [SEP] 토큰을 추가합니다.
+- **Segment Embedding**은 [SEP] 토큰과 별도로 두 문장을 구별하기 위해 입력 토큰 $E_A, E_B$를 제공합니다.
+- **Position Embedding**은 트랜스포머에서 사용된 것과 같이 단어의 위치에 대한 정보를 제공합니다.
+
+### BERT Tokenizer
+- BERT는 **WordPiece Tokenizer**를 사용하는데, 해당 토크나이저는 BPE 알고리즘에 기반합니다.
+- **Byte Pair Encoding**은 모든 단어를 문자로 나누고 고유 문자를 어휘 사전에 추가하는 알고리즘이며,   
+  어휘 사전 크기에 도달할 때까지 가장 빈도수가 큰 기호 쌍을 반복적으로 병합해 어휘 사전에 추가합니다.
+- **Byte-Level Byte Pair Encoding**은 문자 대신 바이트 단위로 시퀀스를 구성하며,   
+  유니코드 문자에 대해 바이트로 변환된 쌍에 대한 어휘 사전을 구축해 다국어 설정에서 유용합니다.
+- **WordPiece**의 경우 BPE와 유사하지만, 빈도수 대신 likelihood를 기준으로 기호 쌍을 병합합니다.
+- BPE와 같은 방식은 어휘 사전에 없는 단어를 하위 단어로 분할하기 때문에, OOV 처리에 효과적입니다.
+
+### Pre-training
+- **언어 모델링**은 일반적으로 임의의 문장이 주어지고 단어를 순서대로 보면서 다음 단어를 예측하도록 학습시키는데,   
+  공백 문자에 대해 전방(왼쪽에서 오른쪽)과 후방(오른쪽에서 왼쪽)으로 예측하는 **자동 회귀 언어 모델링**과,   
+  예측을 하면서 양방향으로 문장을 읽는 **자동 인코딩 언어 모델링**이 있습니다.
+- BERT는 주어진 입력 문장에서 전체 단어의 15%를 무작으로 마스킹하고 마스킹된 단어를 예측하는,   
+  **Masked Language Modeling**을 사용해 학습합니다.
+- [MASK] 토큰을 사전 학습시킬 경우 fine-tuning 시 입력에 [MASK] 토큰이 없어 불일치가 발생할 수 있기 때문에,   
+  15% 토큰 중에서 80%에 대해서만 [MASK] 토큰으로 교체하고, 10%는 임의의 토큰으로, 10%는 변경하지 않는 전략을 취합니다.
+- **Whole Word Masking** 기법을 통해 하위 단어가 마스킹되면 해당 단어와 관련된 모든 단어를 마스킹하며,   
+  해당하는 마스킹 비율이 15%를 초과하면 다른 단어의 마스킹을 무시합니다.
+- **Next Sentence Prediction**은 두 문장에 대해 어느 것이 다음 문장인지 예측하는 것으로,   
+  B 문장이 A에 이어질 경우 `isNext`를 반환하고, 그렇지 않으면 `notNext`를 반환합니다.
+- NSP는 [CLS] 토큰 표현에 소프트맥스 함수와 FFN을 거쳐 두 클래스에 대한 확률값을 반환하는 방식으로 처리되는데,   
+  [CLS] 토큰이 모든 토큰의 집계 표현을 보유하고 있기 때문에 문장 전체에 대한 표현을 담고 있다고 판단하는 것입니다.
+- 사전 학습은 warm-up으로 1만 스텝을 학습하며, dropout 0.1, GELU 활성화 함수를 사용합니다.
+
+---
+
+## Transformer Paper
 
 > **Attention Is All You Need**   
 > CVPR 2017 · Ashish Vaswani et al.
