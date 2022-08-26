@@ -64,7 +64,7 @@
 ## YOLOv1 Paper
 
 > **You Only Look Once: Unified, Real-Time Object Detection**   
-> CVPR 2015 · Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi
+> 2015 · Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi
 
 <a href="https://arxiv.org/pdf/1506.02640v5.pdf"><button type="button" class="btn btn-primary">Paper Link</button></a>
 
@@ -250,7 +250,7 @@
 ## YOLOv4 Paper
 
 > **YOLOv4: Optimal Speed and Accuracy of Object Detection**   
-> CVPR 2020 · Alexey Bochkovskiy, Chien-Yao Wang, Hong-Yuan Mark Liao
+> 2020 · Alexey Bochkovskiy, Chien-Yao Wang, Hong-Yuan Mark Liao
 
 <a href="https://arxiv.org/pdf/2004.10934.pdf"><button type="button" class="btn btn-primary">Paper Link</button></a>
 
@@ -404,7 +404,7 @@ CSPDarknet-53 모델에선 mini-batch를 줄여도 성능 차이가 나타나지
 ## YOLOv7 Paper
 
 > **YOLOv7: Trainable bag-of-freebies sets new state-of-the-art for real-time object detectors**   
-> CVPR 2022 · Chien-Yao Wang, Alexey Bochkovskiy, Hong-Yuan Mark Liao
+> 2022 · Chien-Yao Wang, Alexey Bochkovskiy, Hong-Yuan Mark Liao
 
 <a href="https://arxiv.org/pdf/2207.02696v1.pdf"><button type="button" class="btn btn-primary">Paper Link</button></a>
 
