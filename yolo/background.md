@@ -4,9 +4,10 @@
 - [Introduction](#introduction)
 - [YOLO Summary](#yolo-summary)
 - [YOLOv1 Paper](#yolov1-paper)
-- [History of YOLO](#history-of-yolo)
 - [YOLOv4 Paper](#yolov4-paper)
 - [YOLOv7 Paper](#yolov7-paper)
+- [History of YOLO](#history-of-yolo)
+- [CNN Models](#cnn-models)
 
 ---
 
@@ -19,6 +20,7 @@
 - 프로젝트 진행 당시의 YOLO 최신 버전은 v5였지만, 해당 모델에 대한 논문이 현재까지 존재하지 않는 점과,   
   2022년 8월인 현시점의 기준에서 YOLOv7까지 개발된 상태이기 때문에 최신 버전인 YOLOv7의 논문을 살펴봅니다.
 - YOLO 논문을 분석하는 과정에서 이해하지 못한 부분을 다른 논문 리뷰를 참고하여 정리합니다.
+- YOLO의 백본에 해당하는 CNN을 기반 이미지 분류 모델을 비교합니다.
 - 별도의 노트북 파일에서 YOLOv7에 대한 코드 분석을 수행합니다.
 - 해당 문서는 필요에 의하여 지속적으로 업데이트 됩니다.
 
@@ -162,88 +164,6 @@
 - 통합된 객체 인식 모델 YOLO는 구조적으로 만들기 쉽고 전체 이미지를 직접적으로 학습합니다.
 - 분류기 기반 접근 방식과 다르게 YOLO는 인식 성능과 직접적으로 연관된 loss function을 사용하여 학습합니다.
 - Fast YOLO는 일반적인 목적의 빠른 객체 탐지기로 실시간 객체 탐지에서 SOTA를 추구합니다.
-
----
-
-## History of YOLO
-
-> YOLOv1 to YOLOv6
-
-### Basic Working of YOLO
-- YOLO는 객체 인식에 대한 mAP(mean average precision)을 최대화하기 위한 목적으로 학습하며,   
-  전반적인 구조는 3개의 요소 Backbone, Neck, Head로 구성되어 있습니다.
-- Backbone은 시각적인 feature를 추출하는 CNN으로 ResNet, VGG, EfficientNet 등이 사용됩니다.
-- Neck은 예측 단계 전에 특징들을 blending하기 위한 목적의 계츠응로 FPN, PAN, Bi-FPN 등이 있습니다.
-- Head는 neck에서 처리된 feature를 가지고 회귀를 통해 bounding box 예측과 분류를 수행합니다.
-
-### YOLOv1
-- 최초의 YOLO는 2015년 Joseph Redmon으로부터 제안된 [논문](https://arxiv.org/pdf/1506.02640.pdf)으로부터 시작되었습니다.
-- R-CNN의 느린 속도를 개선하기 위해 단순한 구조의 YOLO을 생성하였고 실제로 45 FPS에 대해 63.4 mAP를 보였습니다.
-- YOLO는 이미지를 무수한 grid로 나누고 각 grid에서 객체가 존재할 확률을 계산했습니다.
-
-### YOLOv2
-- YOLOv2는 2016년 Joseph Redmon과 Ali Farhadi의 두번째 [논문](https://arxiv.org/pdf/1612.08242.pdf)에서 제안되었습니다.
-- 이떄 명명된 YOLO9000은 9000개의 분류를 탐지할 수 있다는 의미로 이전보다 더욱 나은 성능을 보였습니다.
-- YOLOv2의 경우 VOC 2012 데이터셋에 대해 78.6 mAP를 보였고, 이는 다른 객체 인식 모델과 비교해 월등한 성능입니다.
-- YOLOv2는 anchor box라는 개념을 제시했는데 이는 미리 정해진 크기와 비율을 가진 bounding box로,   
-  예측된 bounding box와 anchor box의 IoU를 비교하여 계산하여 IoU가 theshold처럼 사용되게 합니다.
-- anchor box의 개수와 형태는 K-means clustering을 활용해 데이터셋에 따라 적절하게 결정됩니다.
-- 다양한 비율에 적용하기 위해 학습 과정에서 랜덤으로 이미지에 대해 resizing을 수행합니다.
-- robust 방식을 적용해 bounding box가 존재하는 COCO 데이터셋과 bounding box가 없는 ImageNet 데이터셋을 사용하여,   
-  라벨이 없는 이미지에 대해선 분류 에러만 처리하도록 했습니다.
-- 추론 속도는 200 FPS에 대해 75.3 mAP를 달성했고, darknet19 아키텍처가 사용되었습니다.
-
-### YOLOv3
-- YOLOv3는 2018년 Joseph Redmon과 Ali Farhadi의 세번째 [논문](https://arxiv.org/pdf/1804.02767.pdf)에서 제안되었습니다.
-- YOLOv3-320은 22 mili초 동안 28.2 mAP를 보였고, 이는 SSD 객체 탐지 기술보다 3배 빠른 속도입니다.
-- YOLOv3는 fc 또는 pooling layer없이 75개의 convolutional layer로 구성되어 모델 사이즈가 크게 감소했습니다.
-- FPN이 feature extractor로 사용되어 단일 이미지에서 types, forms, sizes 등의 특징을 잡아내 합칩니다.
-- logistic classifier와 activation을 적용해 RetinaNet-50보다 높은 accuracy를 달성했습니다.
-- backbone에서 YOLOv3는 Darknet53 아키텍처를 사용합니다.
-
-### YOLOv4
-- YOLOv4부터는 Joseph Redmon이 더이상 참여하지 않게 되었는데,   
-  대신 2020년 Alexey Bochkovskly에 의한 새로운 [논문](https://arxiv.org/pdf/2004.10934.pdf)을 통해 제안되었습니다.
-- YOLOv4는 efficientDet과 ResNext50과 같은 탐지 모델보다 높은 성능을 보였고,   
-  YOLOv3와 같은 Darknet53을 backbone으로 사용했습니다.
-- YOLOv4는 시간의 증가 없이 accuracy를 상승시키는 bag of freebies와,   
-  약간의 시간 증가를 통해 accuracy를 크게 향상시키는 bag of specials를 적용했습니다.
-- 이를 통해 62 FPS에 대해 43.5 mAP를 보였습니다.
-- Bag of Freebies(BOF)로는 CutMix 같은 데이터 증강 기법, IoU 등의 bounding box regression loss,   
-  dropout 등의 규제, mini-batch 등의 정규화가 사용되었습니다.
-- Bag of Specials(BOS)로는 feature map을 생성하는 SAM, 객체를 그룹화하여 동시에 여러 개의 bounding box를 얻는 NMS,   
-  ReLU와 같은 non-linear activation functions, WRC 또는 CSP와 같은 Skip-Connections가 사용되었습니다.
-
-### YOLOv5
-- YOLOv5는 YOLOv4 소개 후 얼마 지나지 않은 2020년 Ultranytics라는 기업으로부터 발표되었지만,   
-  아직까지 논문이 제시되지 않았고 YOLOv3를 PyTorch로 구현한 것에 불과하다는 평가를 받습니다.
-- 공식 논문이 존재하지 않아 성능을 보장받지는 못했으며,   
-  상대적으로 적은 계산 비용에 대해 다른 YOLO 모델과 비슷한 55.6 mAP를 달성했습니다.
-
-### YOLOv6
-- YOLOv6도 마찬가지로 모델 구조의 변화만 가지고 2021년에 업데이트되었습니다.
-- 이전 버전과의 차이점은 모델이 더 깊어졌고, head가 기존 3개에서 4개 scale로 변경되었다는 점입니다.
-- 학습 시 Mosaic, Mixup, Copy & Paste를 수행합니다.
-- loss 역시 동일하게 boundary box에 대한 loss로 CIoU loss를 사용하고,   
-  classification과 confidence에 대한 loss로 binary cross entropy 및 focal loss를 사용합니다.
-- nano 버전이 생겨났으며, YOLOv4의 tiny 모델에 비해 training 및 inference 속도 모두 향상되었습니다.
-
-### Summary
-- YOLOv2부터 anchor box가 도입되었으며, K-means clustering으로 optimal한 크기와 개수를 정해줍니다.
-- 또한, YOLOv2부터 fc layer가 사라져, 다양한 크기의 input을 넣을 수 있게 되었습니다.
-- YOLOv3에서는 3개 scale로 예측하면서 small object를 잘 못찾는 문제를 개선했습니다.
-- YOLOv4에서는 Mosaic, MixUp 등 다양한 증강 기법을 적용하여 성능을 향상시켰습니다.
-- 또한, YOLOv4에서는 CSP layer를 활용하여 정확도는 향상시키되, 속도를 감소시켰습니다.
-- YOLOv4까지는 Darknet 기반의 backbone을 사용했지만, YOLOv5부터 PyTorch로 구성된 backbone을 사용합니다.
-- YOLOv6부터는 3개 scale 탐지를 4개로 늘려 더욱 다양한 크기의 객체를 탐지할 수 있게 되었습니다.
-- 추가적으로 PP-YOLO, Scaled-YOLOv4, YOLOR, YOLOX 등의 모델이 있습니다.
-
-### References
-- [A Brief History of YOLO Object Detection Models From YOLOv1 to YOLOv5](https://machinelearningknowledge.ai/a-brief-history-of-yolo-object-detection-models/)
-- [Object Detection이란? Object Detection 용어정리](https://leedakyeong.tistory.com/entry/Object-Detection이란-Object-Detection-용어정리)
-- [[Object Detection(객체 검출)] YOLO v1 : You Only Look Once](https://leedakyeong.tistory.com/entry/Object-Detection객체-검출-딥러닝-알고리즘-history-및-원리)
-- [YOLO v1 ~ v6 비교(1)](https://leedakyeong.tistory.com/entry/Object-Detection-YOLO-v1v6-비교)
-- [YOLO v1 ~ v6 비교(2)](https://leedakyeong.tistory.com/entry/Object-Detection-YOLO-v1v6-비교2)
 
 ---
 
@@ -544,3 +464,234 @@ CSPDarknet-53 모델에선 mini-batch를 줄여도 성능 차이가 나타나지
 - 연구 과정에서 re-parameterized module 및 dynamic label assignment에 대한 문제점을 발견했고,   
   객체 인식 정확도를 높이는 trainable bag-of-freebies 기법을 제안해 문제를 해결하려 했습니다.
 - YOLOv7는 SOTA를 달성했습니다.
+
+---
+
+## History of YOLO
+
+> YOLOv1 to YOLOv6
+
+### Basic Working of YOLO
+- YOLO는 객체 인식에 대한 mAP(mean average precision)을 최대화하기 위한 목적으로 학습하며,   
+  전반적인 구조는 3개의 요소 Backbone, Neck, Head로 구성되어 있습니다.
+- Backbone은 시각적인 feature를 추출하는 CNN으로 ResNet, VGG, EfficientNet 등이 사용됩니다.
+- Neck은 예측 단계 전에 특징들을 blending하기 위한 목적의 계츠응로 FPN, PAN, Bi-FPN 등이 있습니다.
+- Head는 neck에서 처리된 feature를 가지고 회귀를 통해 bounding box 예측과 분류를 수행합니다.
+
+### YOLOv1
+- 최초의 YOLO는 2015년 Joseph Redmon으로부터 제안된 [논문](https://arxiv.org/pdf/1506.02640.pdf)으로부터 시작되었습니다.
+- R-CNN의 느린 속도를 개선하기 위해 단순한 구조의 YOLO을 생성하였고 실제로 45 FPS에 대해 63.4 mAP를 보였습니다.
+- YOLO는 이미지를 무수한 grid로 나누고 각 grid에서 객체가 존재할 확률을 계산했습니다.
+
+### YOLOv2
+- YOLOv2는 2016년 Joseph Redmon과 Ali Farhadi의 두번째 [논문](https://arxiv.org/pdf/1612.08242.pdf)에서 제안되었습니다.
+- 이떄 명명된 YOLO9000은 9000개의 분류를 탐지할 수 있다는 의미로 이전보다 더욱 나은 성능을 보였습니다.
+- YOLOv2의 경우 VOC 2012 데이터셋에 대해 78.6 mAP를 보였고, 이는 다른 객체 인식 모델과 비교해 월등한 성능입니다.
+- YOLOv2는 anchor box라는 개념을 제시했는데 이는 미리 정해진 크기와 비율을 가진 bounding box로,   
+  예측된 bounding box와 anchor box의 IoU를 비교하여 계산하여 IoU가 theshold처럼 사용되게 합니다.
+- anchor box의 개수와 형태는 K-means clustering을 활용해 데이터셋에 따라 적절하게 결정됩니다.
+- 다양한 비율에 적용하기 위해 학습 과정에서 랜덤으로 이미지에 대해 resizing을 수행합니다.
+- robust 방식을 적용해 bounding box가 존재하는 COCO 데이터셋과 bounding box가 없는 ImageNet 데이터셋을 사용하여,   
+  라벨이 없는 이미지에 대해선 분류 에러만 처리하도록 했습니다.
+- 추론 속도는 200 FPS에 대해 75.3 mAP를 달성했고, darknet19 아키텍처가 사용되었습니다.
+
+### YOLOv3
+- YOLOv3는 2018년 Joseph Redmon과 Ali Farhadi의 세번째 [논문](https://arxiv.org/pdf/1804.02767.pdf)에서 제안되었습니다.
+- YOLOv3-320은 22 mili초 동안 28.2 mAP를 보였고, 이는 SSD 객체 탐지 기술보다 3배 빠른 속도입니다.
+- YOLOv3는 fc 또는 pooling layer없이 75개의 convolutional layer로 구성되어 모델 사이즈가 크게 감소했습니다.
+- FPN이 feature extractor로 사용되어 단일 이미지에서 types, forms, sizes 등의 특징을 잡아내 합칩니다.
+- logistic classifier와 activation을 적용해 RetinaNet-50보다 높은 accuracy를 달성했습니다.
+- backbone에서 YOLOv3는 Darknet53 아키텍처를 사용합니다.
+
+### YOLOv4
+- YOLOv4부터는 Joseph Redmon이 더이상 참여하지 않게 되었는데,   
+  대신 2020년 Alexey Bochkovskly에 의한 새로운 [논문](https://arxiv.org/pdf/2004.10934.pdf)을 통해 제안되었습니다.
+- YOLOv4는 efficientDet과 ResNext50과 같은 탐지 모델보다 높은 성능을 보였고,   
+  YOLOv3와 같은 Darknet53을 backbone으로 사용했습니다.
+- YOLOv4는 시간의 증가 없이 accuracy를 상승시키는 bag of freebies와,   
+  약간의 시간 증가를 통해 accuracy를 크게 향상시키는 bag of specials를 적용했습니다.
+- 이를 통해 62 FPS에 대해 43.5 mAP를 보였습니다.
+- Bag of Freebies(BOF)로는 CutMix 같은 데이터 증강 기법, IoU 등의 bounding box regression loss,   
+  dropout 등의 규제, mini-batch 등의 정규화가 사용되었습니다.
+- Bag of Specials(BOS)로는 feature map을 생성하는 SAM, 객체를 그룹화하여 동시에 여러 개의 bounding box를 얻는 NMS,   
+  ReLU와 같은 non-linear activation functions, WRC 또는 CSP와 같은 Skip-Connections가 사용되었습니다.
+
+### YOLOv5
+- YOLOv5는 YOLOv4 소개 후 얼마 지나지 않은 2020년 Ultranytics라는 기업으로부터 발표되었지만,   
+  아직까지 논문이 제시되지 않았고 YOLOv3를 PyTorch로 구현한 것에 불과하다는 평가를 받습니다.
+- 공식 논문이 존재하지 않아 성능을 보장받지는 못했으며,   
+  상대적으로 적은 계산 비용에 대해 다른 YOLO 모델과 비슷한 55.6 mAP를 달성했습니다.
+
+### YOLOv6
+- YOLOv6도 마찬가지로 모델 구조의 변화만 가지고 2021년에 업데이트되었습니다.
+- 이전 버전과의 차이점은 모델이 더 깊어졌고, head가 기존 3개에서 4개 scale로 변경되었다는 점입니다.
+- 학습 시 Mosaic, Mixup, Copy & Paste를 수행합니다.
+- loss 역시 동일하게 boundary box에 대한 loss로 CIoU loss를 사용하고,   
+  classification과 confidence에 대한 loss로 binary cross entropy 및 focal loss를 사용합니다.
+- nano 버전이 생겨났으며, YOLOv4의 tiny 모델에 비해 training 및 inference 속도 모두 향상되었습니다.
+
+### Summary
+- YOLOv2부터 anchor box가 도입되었으며, K-means clustering으로 optimal한 크기와 개수를 정해줍니다.
+- 또한, YOLOv2부터 fc layer가 사라져, 다양한 크기의 input을 넣을 수 있게 되었습니다.
+- YOLOv3에서는 3개 scale로 예측하면서 small object를 잘 못찾는 문제를 개선했습니다.
+- YOLOv4에서는 Mosaic, MixUp 등 다양한 증강 기법을 적용하여 성능을 향상시켰습니다.
+- 또한, YOLOv4에서는 CSP layer를 활용하여 정확도는 향상시키되, 속도를 감소시켰습니다.
+- YOLOv4까지는 Darknet 기반의 backbone을 사용했지만, YOLOv5부터 PyTorch로 구성된 backbone을 사용합니다.
+- YOLOv6부터는 3개 scale 탐지를 4개로 늘려 더욱 다양한 크기의 객체를 탐지할 수 있게 되었습니다.
+- 추가적으로 PP-YOLO, Scaled-YOLOv4, YOLOR, YOLOX 등의 모델이 있습니다.
+
+### References
+- [A Brief History of YOLO Object Detection Models From YOLOv1 to YOLOv5](https://machinelearningknowledge.ai/a-brief-history-of-yolo-object-detection-models/)
+- [Object Detection이란? Object Detection 용어정리](https://leedakyeong.tistory.com/entry/Object-Detection이란-Object-Detection-용어정리)
+- [[Object Detection(객체 검출)] YOLO v1 : You Only Look Once](https://leedakyeong.tistory.com/entry/Object-Detection객체-검출-딥러닝-알고리즘-history-및-원리)
+- [YOLO v1 ~ v6 비교(1)](https://leedakyeong.tistory.com/entry/Object-Detection-YOLO-v1v6-비교)
+- [YOLO v1 ~ v6 비교(2)](https://leedakyeong.tistory.com/entry/Object-Detection-YOLO-v1v6-비교2)
+
+---
+
+## CNN Models
+
+<img src="https://theaisummer.com/static/dfad9981c055b1ba1a37fb3d34ccc4d8/a1792/deep-learning-architectures-plot-2018.png">
+
+<br>
+
+### Summary
+
+<table>
+  <tr><th width="33%" align="center">CNN</th><th width="33%" align="center">LeNet</th><th width="33%" align="center">AlexNet</th></tr>
+  <tr>
+    <td align="center">filter를 이용해 feature map 생성</td>
+    <td align="center">MNIST 데이터셋을 이용해 학습</td>
+    <td align="center">2개의 GPU로 병렬 처리</td>
+  </tr>
+  <tr><th align="center">VGGNet</th><th align="center">Network in Network</th><th align="center">GooLeNet</th></tr>
+  <tr>
+    <td align="center">작은 filter를 여러 번 사용</td>
+    <td align="center">Convolutional Layer에 MLP 적용</td>
+    <td align="center">서로 다른 크기의 filter를 동시에 사용</td>
+  </tr>
+  <tr><th align="center">InceptionV2</th><th align="center">InceptionV3</th><th align="center">InceptionV4</th> </tr>
+  <tr>
+    <td align="center">GooLeNet에서 filter를 나누어 사용</td>
+    <td align="center">가장 최적화된 Inception</td>
+    <td align="center">단순하고 획일화된 구조 및<br>Skip Connection 적용</td>
+  </tr>
+  <tr><th align="center">ResNet</th><th align="center">MobileNet</th><th align="center">DenseNet</th></tr>
+  <tr>
+    <td align="center">Skip Connection</td>
+    <td align="center">작은 사이즈에 최적화</td>
+    <td align="center">전체 네트워크에 Skip Connection 적용</td>
+  </tr>
+  <tr><th align="center">SeNet</th><th align="center">ShuffleNet</th><th align="center">NasNet</th></tr>
+  <tr>
+    <td align="center">feature를 압축하고 다시 복원</td>
+    <td align="center">pointwise 연산 시<br>channel 간 shuffle</td>
+    <td align="center">cell 단위로 네트워크 조합 탐색</td>
+  </tr>
+  <tr><th align="center">EfficientNet</th><th align="center"></th><th align="center"></th></tr>
+  <tr>
+    <td align="center">작은 모델을 탐색하고 최적화</td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+</table>
+
+### [CNN](http://yann.lecun.com/exdb/publis/pdf/lecun-89e.pdf)
+- 일정한 크기의 필터를 이용해 이미지를 스캔하면서 각 데이터와 필터의 값을 곱해서 더합니다.
+- 출력 데이터의 크기를 일정하게 만들기 위해 주변에 padding을 추가합니다.
+- 데이터의 특징을 더 잘 추출하기 위해 텐서의 크기를 줄이는 pooling을 수행합니다.
+
+### [LeNet](http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf)
+- MNIST 데이터셋을 이용해 학습하였고, 기존의 알고리즘보다 높은 성능을 보였습니다.
+
+### [AlexNet](https://proceedings.neurips.cc/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf)
+- 얼굴, 사물인식처럼 더 복잡한 데이터를 다루기에는 부족한 컴퓨터 연산 능력을 보완하기 위해,   
+  2개의 GPU를 사용해 연산 시 병렬 처리가 가능하게 한 모델입니다.
+- ReLU activation function을 사용했고, 파라미터가 커짐에 따라 발생할 과적합 문제를 해결하기 위해 dropout을 적용했습니다.
+- **Local Response Normalization**을 통해 인접한 채널에서 같은 위치에 있는 픽셀 n개를 정규화하여,   
+  큰 input을 그대로 전달해 주변 값들이 무시되는 ReLU의 문제를 개선했습니다.
+- **Data augmentation**을 적용시켜 데이터를 수평 반전 및 랜덤으로 잘라서 다양한 데이터를 생성했습니다.
+
+### [VGGNet](https://arxiv.org/pdf/1409.1556.pdf)
+- AlexNet이 5개의 conv layer를 사용한 것에 비해 VGG-16은 13개의 conv layer와 3개의 fc layer를 사용한 모델입니다.
+- 3x3 필터로 여러 번 convolution 하는 것과 7x7 필터로 convolution 하는 것이 동일한 결과를 낸다고 밝혔지만,   
+  여러 번 ReLU 함수를 사용하여 비선형성을 증가시키고, 학습 파라미터 수를 감소시킨다는 면에서 3x3 필터를 사용했습니다.
+
+### Network in Network
+- 기존 CNN 같은 linear conv layer 구조로는 필터가 늘어남에 따라 증가하는 연산량을 해결할 수 없어 MLP를 적용한 모델입니다.
+- channel이 여러 개로 쌓인 구조에서 차원을 줄여주기 위해 1x1 conv layer를 사용합니다.
+
+### [GooLeNet](https://arxiv.org/pdf/1409.4842.pdf)
+- AlexNet보다 파라미터 수가 12개 적지만 정확도는 훨씬 높은 모델로,   
+  conv filter size에 따른 위치 정보와 local region 간 trad-off 관계를 고려하여 순서 없이 한번에 사용했습니다.
+- Inception module은 1x1, 3x3, 5x5 conv 및 3x3 max pooling을 동시에 수행하고 output을 merge하는데,   
+  channel이 많아질수록 연산이 복잡해지는 문제를 해결하기 위해 1x1 conv로 차원을 우선 축소하고 연산을 수행합니다.
+- GooLeNet은 Inception module을 여러 층 쌓은 구조이며 중간마다 auxiliary classifier network를 사용해,   
+  역전파 과정에서 gradient를 증폭시켜 네트워크가 깊어짐에 따른 gradient vanishing 문제를 해결했습니다.
+
+### [InceptionV2](https://arxiv.org/pdf/1502.03167v3.pdf)
+- 기존 GooLeNet에서 연산량을 더 줄여보기 위해 기존 filter를 나누어 사용한 모델입니다.
+- 5x5 conv layer를 2개의 3x3 conv layer로 대체해 파라미터 수를 25에서 18로 줄였고,   
+  7x7 conv layer 역시 3개의 3x3 conv layer로 대체해 파라미터 수를 49개에서 27개로 줄였습니다.
+- nxn conv layer 또한 1xn과 nx1 conv layer로 나누었고,   
+  기존 GooLeNet에서 auxiliary classifier 2개 중 하나를 제거한 구조를 가집니다.
+
+### [InceptionV3](https://arxiv.org/pdf/1512.00567.pdf)
+- InceptionV2의 구조적 변화 없이 파라미터를 수정하면서 더 좋게 나온 결과를 합친 모델입니다.
+- Optimzer를 RMSProp으로 변경했고, Label Smoothing을 적용해 과적합을 방지했습니다.
+- 마지막 fc layer에 batch normalization을 적용한 BN-auxiliary를 사용했습니다.
+
+### [InceptionV4](https://arxiv.org/pdf/1602.07261.pdf)
+- 성능은 좋지만 구조가 복잡한 기존 Inception 모델을 개선해,   
+  단순하고 획일화된 구조와 더 많은 Inception module을 사용했습니다.
+- Stem > Inception-A > Reduction-A > Inception-B > Reduction-B >   
+  Inception-C > Average Pooling > Dropout > Softmax로 구성되어 있습니다.
+- 기존의 Inception module에 ResNet의 residual connection을 결합해 더 빠른 학습을 가능하게 했습니다.
+
+### [ResNet](https://arxiv.org/pdf/1512.03385.pdf)
+- Microsoft에서 개발한 모델로, VGG-16과 같이 convolution과 pooling의 반복을 통해,   
+  특징을 추출하고 마지막에 fc layer를 통해 분류합니다.
+- 이전 layer와 다음 layer를 연결하는 residual connection (skip connection)이 존재하는데,   
+  동일한 연산을 하고 input을 다시 더함으로써, 기존에 학습한 정보를 보존하고 추가적으로 정보를 학습합니다.
+- residual block은 층이 깊어질수록 발생하는 gradient vanishing 문제를 해결하기 위해,   
+  gradient가 잘 흐를 수 있도록 skip connection을 제공하는 것으로 LSTM의 철학과 유사합니다.
+- skip connection을 통해 입력 데이터와 gradient가 오갈 수 있는 통로가 늘어 ensemble과 비슷한 효과를 발생시켰고,   
+  이미 배웠던 내용이 제공되기 때문에 VGG-16 대비 훈련에 소요되는 시간이 훨씬 줄어들었습니다.
+
+### [MobileNet](https://arxiv.org/pdf/1704.04861.pdf)
+- Google에서 개발한 모델로, 작은 사이즈에 최적화되어 있어 모바일 기기 등에서 동작하기에 이상적입니다.
+- 사이즈가 작은 만큼 VGG-16 또는 ResNet 대비 정확도가 떨어지지만,   
+  일반적인 conv layer를 활용한 모델과 비교해 9배의 계산량과 7배의 파라미터를 줄이면서 비슷한 정확도를 보입니다.
+
+### [DenseNet](https://arxiv.org/pdf/1608.06993.pdf)
+- ResNet에서 발전해 전체 네트워크의 모든 층과 통하는 지름길을 생성한 모델입니다.
+- feature map을 연결하는 연산으로 add 대신 concat을 사용하는데,   
+  채널 자체를 굉장히 작은 수로 줄여 feature map이 커지는 문제를 방지했습니다.
+
+### [SeNet](https://arxiv.org/pdf/1709.01507.pdf)
+- Squeeze and Excitation이라는 이름처럼 filter와 global average pooling을 적용한 텐서에,   
+  오토인코더 구조처럼 reduction ratio라는 값을 통해 압축시켰다가 다시 같은 사이즈로 펼쳐내는 방식으로 증폭시킵니다.
+- 위와 같은 과정의 Se block을 Inception과 ResNet과 같은 기존 네트워크에 가져다 붙여 사용합니다.
+
+### [ShuffleNet](https://arxiv.org/pdf/1707.01083.pdf)
+- MobileNet처럼 적은 파라미터 수 대비 성능을 높이기 위한 목적의 모델입니다.
+- 기존 seperable convolution에서 필터별 연산에 해당하는 pointwise 연산이   
+  정보의 손실을 가져오는 문제를 개선하기 위해 channel 간 정보를 섞어 정보 교류를 발생시킵니다.
+
+### [NasNet](https://arxiv.org/pdf/1707.07012.pdf)
+- 기존 NAS는 RNN Controller와 Reinforcement Learning을 활용해   
+  CIFAR-10 데이터셋에 대한 최적의 네트워크를 찾아냈는데, 여기서 발생하는 비효율을 개선하기 위해   
+  convolution cell이라는 단위를 먼저 추정하고 이들을 조합해 전체 네트워크를 구성했습니다.
+- NAS의 layer 별 탐색에 비해 cell 별 탐색을 통해 사람이 이해할 수 있는 형태를 띄었습니다.
+
+### [EfficientNet](https://arxiv.org/pdf/1905.11946.pdf)
+- MnasNet을 통해 얻어진 EfficientNet-B0이라는 작은 모델을 주어진 task에 최적화된 구조로 수정했습니다.
+- compound scaling을 통해 depth, width, resolution에 대한 파라미터 및 조건을 정의하고,   
+  grid search 기법으로 alpha, beta, gamma 값을 찾아 세 가지가 같은 비율로 조정될 수 있게 했습니다.
+- 파라미터 수와 연산을 줄이면서도, 기존 모델과 비슷하거나 오히려 높은 정확도를 달성했습니다.
+
+### References
+- [Inception v1,v2,v3,v4는 무엇이 다른가 (+ CNN의 역사)](https://hyunsooworld.tistory.com/40)
+- [이미지 인식: 1. 이미지 분류(Image Classification)의 정의와 주요 모델 비교](https://medium.com/ddiddu-log/이미지-인식의-정의와-주요-모델-비교-1-이미지-분류-image-classification-ae7a59bfaf65)
+- [CNN 주요 모델들](https://ratsgo.github.io/deep%20learning/2017/10/09/CNNs/)
+- [CNN의 흐름? 역사?](https://junklee.tistory.com/111)
