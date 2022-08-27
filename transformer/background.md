@@ -59,7 +59,7 @@
   디코더에서 \<eos> 토큰이 생성될 때까지 같은 과정을 반복하며 타깃 문장을 생성합니다.
 - 디코더에서도 입력값을 바로 입력하지 않고 위치 인코딩을 추가한 값을 출력 임베딩에 더해 입력값으로 사용합니다.
 - **Masked Multi-Head Attention**은 디코더가 이전 단계에서 생성한 단어만 입력으로 넣도록,   
-  아직 예측하지 않은 오른쪽의 모든 단어를 $-\infin$에 해당하는 매우 작은 값으로 마스킹을 적용합니다.
+  아직 예측하지 않은 오른쪽의 모든 단어를 $-\infty$에 해당하는 매우 작은 값으로 마스킹을 적용합니다.
 - **Encoder-Decoder Attention Layer**에서는,   
   인코더의 표현값 R과 마스크된 멀티 헤드 어텐션의 결과 M에 대해 상호작용이 발생하며,   
   M은 Q를, R은 K, V를 생성하는데 활용되어 타깃 단어가 입력 문장의 모든 단어와 얼마나 유사한지 계산합니다.
@@ -278,9 +278,9 @@ SOTA에 달하는 성능을 보였습니다.
 </table>
 
 ### [XLNet](https://arxiv.org/pdf/1906.08237.pdf)
-- **Auto Encoding(AE)**는 어떤 값을 복원해내는 것에 목적이 있습니다.   
+- **Auto Encoding**는 어떤 값을 복원해내는 것에 목적이 있습니다.   
   (BERT는 denoising AE라 볼 수 있습니다.)
-- **Auto Regressive(AR)**은 word sequence에 대해 순차적으로 likelihood를 계산하는 것입니다.
+- **Auto Regressive**은 word sequence에 대해 순차적으로 likelihood를 계산하는 것입니다.
 - AE는 mask 토큰을 독립적으로 예측할 수 없어 토큰 간 dependency를 학습할 수 없는 문제가 있고,   
   AR은 단일 방향 정보만 이용하여 학습 가능한 단점이 있습니다.
 - XLNet은 AE과 AR의 장점은 살리고 단점은 보완했고, 그 방법으로는 아래 세가지가 있습니다.
