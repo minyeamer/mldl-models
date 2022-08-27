@@ -257,17 +257,23 @@ SOTA에 달하는 성능을 보였습니다.
     <td align="center">Bidirectional하게 맥락을 파악</td>
     <td align="center">Zeroshot 전이 학습</td>
   </tr>
-  <tr><th align="center">XLNet</th><th align="center">RoBERTa</th> <th align="center">MASS</th> </tr>
+  <tr><th align="center">XLNet</th><th align="center">RoBERTa</th><th align="center">MASS</th> </tr>
   <tr>
     <td align="center">BERT와 GPT를 합친 구조로<br>AR 공식을 통해 BERT 한계 극복</td>
     <td align="center">가장 최적화된 BERT</td>
     <td align="center">인코더와 디코더에 상반된 masking</td>
   </tr>
-  <tr><th align="center">BART</th><th align="center">MT-DNN</th> <th align="center">T5</th></tr>
+  <tr><th align="center">BART</th><th align="center">MT-DNN</th><th align="center">T5</th></tr>
   <tr>
     <td align="center">인코더에 다양한 noising 추가</td>
     <td align="center">Multitask learning을 통해<br>일반적인 표현 생성</td>
     <td align="center">모든 NLP task를 통합</td>
+  </tr>
+  <tr><th align="center">ALBERT</th><th align="center">ELECTRA</th><th align="center">Funnel-Transformer</th></tr>
+  <tr>
+    <td align="center">사이즈를 줄인 BERT</td>
+    <td align="center">RTD 방식을 통한 학습 효율 개선</td>
+    <td align="center"></td>
   </tr>
 </table>
 
@@ -335,5 +341,54 @@ SOTA에 달하는 성능을 보였습니다.
 - multi-task learning이 unsupervised pre-training과 비슷한 성능을 보였습니다.
 - **Modified MLM**은 BART처럼 연속된 토큰을 하나의 mask로 바꾸면서, MASS의 방식으로 mask 되지 않은 부분을 target에서 맞춥니다.
 
+### [ALBERT](https://arxiv.org/pdf/1909.11942.pdf)
+- BERT의 구조를 개선하여 모델의 크기를 줄이면서 높은 성능을 달성했습니다.
+- **Factorized Embedding Parameterization**은 임베딩 벡터를 hidden unit 수보다 작게 설정하는 것으로,   
+  서로 다른 차원을 맞추기 위해 기존 BERT에서 VxH Matrix를 활용했던 것을 VxE, ExH 2개의 Matrix로 분리했습니다.
+- **Cross-layer Parameter Sharing**은 transformer layer간 파라미터를 공유하며 사용하는 것으로,   
+  실제 실험에서 파라미터의 공유에 따른 성능 저하가 크지 않다는 것을 확인했습니다.
+- **Sentence Order Prediction**은 BERT의 NSP보다 나은 학습 방법으로,   
+  실제 연속인 두 문장과 순서를 바꾼 것 중 옳은 문장을 예측하는 방식으로 학습합니다.
+- large에서 xlarge로 커질 때 성능이 떨어지는 BERT와 달리 ALBERT는 xxlarge가 xlarge보다 높은 성능을 보입니다.
+
+### [ELECTRA](https://arxiv.org/pdf/2003.10555.pdf)
+- MLM을 개선시킨 RTD 방식으로 학습을 진행합니다.
+- **Replaced Token Detection**은 마스킹된 단어를 Generator를 통해 다른 단어로 치환한 후,   
+  Discriminator로 원본과 맞는지 확인하는 방식으로 학습하는 방식입니다.
+- Generator의 경우 데이터의 15%에 해당하는 [MASK] 토큰에 대해서만 학습할 수밖에 없는 낭비가 있는데,   
+  RTD 방식은 모든 토큰에 대해 MLM이 생성한 토큰인지 여부를 판별하여 모든 토큰을 학습하는 효과가 있습니다.
+- ELECTRA에서 Generator는 문맥적으로 올바른 표현을 생성하는데 그치기 때문에 GAN의 Generator와는 차이가 있습니다.
+- Generator와 Discriminator 모두 transformer의 인코더로 구성되어 있고,   
+  파라미터 수를 줄이기 위해 embedding layer를 weight sharing 합니다.   
+  (Generator와 Discriminator 간 weight sharing을 할 경우 두 모델의 크기가 같아져 메모리 부담이 있습니다.)
+- 또한 embedding에 대한 weight sharing은 MLM에 의해 embedding이 편향될 경우를 방지하는 효과가 있습니다.
+
+### KoELECTRA
+- 공개되어 있는 한국어 PLM에는 KoBERT, HanBERT, KorBERT가 존재하는데,   
+  각각 적은 vocab size, 환경적 제약, API 신청 과정이라는 단점이 있습니다.
+- 이러한 단점을 해결하기 위해 충분한 양의 vocab size와 모든 OS에 대한 호환성,   
+  tokenization 파일을 생성할 필요가 없고 성능이 보장됨을 목표로 생성된 모델입니다.
+- 현업에서는 좋은 성능을 위해 Mecab+Sentencepiece를 사용하지만,   
+  ELECTRA 및 transformers에서 공식적으로 Wordpiece만 지원하여 작업을 덜기 위해 Wordpiece를 사용했습니다.
+- 7개 task에 대해 fine-tuning 했을 때, KoBERT보다 전반적으로 성능이 앞섰고,   
+  HanBERT와 비교했을 때도 일부 성능이 앞서는 케이스가 존재했습니다.
+
+### [Funnel-Transformer](https://arxiv.org/pdf/2006.03236.pdf)
+- hidden states의 길이를 점진적으로 압축하여 연산 비용을 줄인 모델입니다.
+
+### Comparison by GLUE and SQuAD
+
+<img src="../.media/electra/table_2.png">
+
+<img src="../.media/electra/table_3.png">
+
+<img src="../.media/electra/table_4.png">
+
 ### References
 - [[Paper Review] Transformer to T5 (XLNet, RoBERTa, MASS, BART, MT-DNN,T5)](https://youtu.be/v7diENO2mEA)
+- [After BERT & ELECTRA 언어모델 비교 및 선정](https://mysterico.tistory.com/8)
+- [[ALBERT 논문 Review] ALBERT: A LITE BERT FOR SELF-SUPERVISED LEARNING OF LANGUAGE REPRESENTATIONS](https://y-rok.github.io/nlp/2019/10/23/albert.html)
+- [ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators (ICLR 2020)](https://roomylee.github.io/electra/)
+- [[고려대 ICPS lab. 논문리뷰] ELECTRA: PRE-TRAINING TEXT ENCODERS AS DISCRIMINATORS RATHER THAN GENERATORS](https://youtu.be/ayVS904xQpQ)
+- [2주 간의 KoELECTRA 개발기 - 1부](https://monologg.kr/2020/05/02/koelectra-part1/)
+- [2주 간의 KoELECTRA 개발기 - 2부](https://monologg.kr/2020/05/02/koelectra-part2/)
