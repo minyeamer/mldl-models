@@ -4,6 +4,7 @@
 - [Introduction](#introduction)
 - [Transformer Summary](#transformer-summary)
 - [Transformer Paper](#transformer-paper)
+- [Language Models](#language-models)
 
 ---
 
@@ -11,6 +12,7 @@
 - 자연어 처리에서 거대 언어 모델의 근간이 되는 Transformer의 구조에 대해 다뤄보자는 취지로 해당 분석을 진행합니다.
 - Transformer와 Attention Mechanism에 대한 논문을 알아보고,   
   Transformer의 인코더-디코더 구조를 세부적으로 파악하여 정리합니다.
+- Transformer를 기반으로 하는 다양한 언어 모델을 비교합니다.
 - 별도의 노트북 파일에서 Transformer 및 BERT에 대한 코드 분석을 수행합니다.
 - 해당 문서는 필요에 의하여 지속적으로 업데이트 됩니다.
 
@@ -235,3 +237,103 @@ $$
 - 번역 작업에서 트랜스포머는 순환 또는 합성곱 층 기반 구조와 비교했을 때 매우 빠르게 학습하였고,   
 SOTA에 달하는 성능을 보였습니다.
 - 트랜스포머를 텍스트 뿐 아니라, 이미지, 오디오, 동영상의 영역까지 확대할 계획입니다.
+
+---
+
+## Language Models
+
+### Summary
+
+<table>
+  <tr><th width="33%" align="center">Seq2Seq</th><th width="33%" align="center">Attetion+Seq2Seq</th><th width="33%" align="center">Transformer</th></tr>
+  <tr>
+    <td align="center">인코더-디코더 구조</td>
+    <td align="center">디코더가 source sentence의<br>중요한 정보에 집중</td>
+    <td align="center">Self Attention, Multi-head Attention</td>
+  </tr>
+  <tr><th align="center">GPT-1</th><th align="center">BERT</th><th align="center">GPT-2</th></tr>
+  <tr>
+    <td align="center">사전 학습을 통해 언어 자체를 이해</td>
+    <td align="center">Bidirectional하게 맥락을 파악</td>
+    <td align="center">Zeroshot 전이 학습</td>
+  </tr>
+  <tr><th align="center">XLNet</th><th align="center">RoBERTa</th> <th align="center">MASS</th> </tr>
+  <tr>
+    <td align="center">BERT와 GPT를 합친 구조로<br>AR 공식을 통해 BERT 한계 극복</td>
+    <td align="center">가장 최적화된 BERT</td>
+    <td align="center">인코더와 디코더에 상반된 masking</td>
+  </tr>
+  <tr><th align="center">BART</th><th align="center">MT-DNN</th> <th align="center">T5</th></tr>
+  <tr>
+    <td align="center">인코더에 다양한 noising 추가</td>
+    <td align="center">Multitask learning을 통해<br>일반적인 표현 생성</td>
+    <td align="center">모든 NLP task를 통합</td>
+  </tr>
+</table>
+
+### [XLNet](https://arxiv.org/pdf/1906.08237.pdf)
+- **Auto Encoding(AE)**는 어떤 값을 복원해내는 것에 목적이 있습니다.   
+  (BERT는 denoising AE라 볼 수 있습니다.)
+- **Auto Regressive(AR)**은 word sequence에 대해 순차적으로 likelihood를 계산하는 것입니다.
+- AE는 mask 토큰을 독립적으로 예측할 수 없어 토큰 간 dependency를 학습할 수 없는 문제가 있고,   
+  AR은 단일 방향 정보만 이용하여 학습 가능한 단점이 있습니다.
+- XLNet은 AE과 AR의 장점은 살리고 단점은 보완했고, 그 방법으로는 아래 세가지가 있습니다.
+- **Permutation Language Modeling Objective**는 input sequence에 대해,   
+  permutation 집합을 생성하고 모든 집합에 AR formula(likelihood)를 적용합니다.
+- permutation 집합으로 다양한 sequence를 통한 양방향 context를 고려하여 AR의 한계를 극복하고,   
+  masking을 제거하여 AE의 한계를 극복했습니다.
+- **Target-Aware Representation**은 새로운 objective function을 적용하기 위해 제안되었으며,   
+  학습 시 permutation으로 인해 예측할 토큰이 명확하지 않은 문제에 대한 해결방안으로,   
+  예측할 representation과 target 토큰을 함께 학습하게 됩니다.
+- **Two-Straem Self-Attention**은 변경된 representation을 self attention에 적용하기 위해,   
+  T 시점 이전과 T 시점 이후의 context를 모두 고려하도록 2가지 hidden representation을 사용합니다.
+- 위 방식은 t 시점 이전의 토큰 정보와 t 시점의 위치 정보에 대한 **query representation**과,   
+  t 시점과 t 이전 시점의 토큰 정보에 대한 일반적인 **context representation**으로 나눠집니다.
+- Transformer-XL 논문을 참고한 구조
+- permutation 집합이 많아지는 문제를 해결하기 위해 sampling을 진행하고 마지막 K개의 예측만 사용
+
+### [RoBERTa](https://arxiv.org/pdf/1907.11692.pdf)
+- BERT의 구조적 변화 없이 모델의 학습시간, batch 사이즈, train data를 증가시켰습니다.
+- 또한, NSP task를 제거하고 longer sequence를 추가했습니다.
+- masking pattern을 dynamic하게 하여, 똑같은 데이터에 대해 masking을 10번 다르게 적용해 학습했습니다.
+
+### [MASS](https://arxiv.org/pdf/1905.02450.pdf)
+- XLNet 구조를 그대로 가져오면서 masking 방법을 다르게 한 모델입니다.
+- 인코더 입력 중 일부 fragment에 masking을 적용하며, 디코더에서는 예측할 토큰들을 auto-regressive하게 입력하면서,   
+  인코더에서 masking을 하지않은 토큰을 masking하여 입력합니다.
+- 인코더와 디코더의 masking을 반대로 하여 두가지가 상호의존적으로 학습할 수 있게 합니다.
+- K는 masking할 fragment의 길이에 대한 파라미터로, K=1일 경우 BERT, K=m일 경우 GPT의 방식과 유사합니다.
+
+### [BART](https://arxiv.org/pdf/1910.13461.pdf)
+- MASS와 비슷하지만 bidirectional하게 auto-regressive transformer를 진행합니다.
+- 인코더 입력에만 noise를 가해주며, noise 방법론엔 5가지가 존재합니다.
+- **Token Masking**은 임의의 토큰을 [MASK]로 교체하고 [MASK] 토큰이 무엇인지 예측하는 것입니다.
+- **Token Deletion**은 임의의 토큰을 삭제하고 삭제한 토큰의 위치를 찾는 것입니다.
+- **Text Infilling**은 poisson 분포를 따르는 span length를 뽑아 하나의 [MASK] 토큰으로 대체하고,   
+  [MASK]로 대체된 토큰에 몇 개의 토큰이 존재할지를 예측하는 것입니다.
+- **Sentence Permutation**은 문장의 순서를 랜덤으로 섞는 것입니다.
+- **Document Rotation**은 하나의 토큰을 시작점으로 회전시키고 원래 문서의 시작점을 찾는 것입니다.
+- Text Infilling 노이즈 방법을 사용했을 때 가장 높은 성능을 보였습니다.
+
+### [MT-DNN](https://arxiv.org/pdf/1901.11504.pdf)
+- BERT에 Multi-task learning을 적용한 것입니다.
+- **Multi-task learning**은 이전 task로부터 학습된 지식이 다음 task 학습을 도와 성능 향상이 이루어질 것이라 기대하는 것입니다.
+- related task로부터 모인 많은 양의 supervised data를 활용해 학습할 수 있고,   
+  single modelfh 여러가지 task를 학습하여 regularization 효과를 줄 수 있습니다.
+- pre-train 단에서 task를 학습하기 위해 특정 task에 대한 mini-batch에서 랜덤하게 데이터를 선택하고,   
+  선택된 task에 맞는 loss function을 구성하여 오차 전파를 수행합니다.
+- MT-DNN은 데이터 양이 적을 때 BERT 대비 높은 성능을 보입니다.
+
+### [T5](https://arxiv.org/pdf/1910.10683.pdf)
+- 여러가지 task를 텍스트로 바꾸고 그로부터 텍스트를 뱉어내는 unified framework를 생성하는 것이 T5의 목표입니다.
+- **text-to-text**는 text 형태로 주어진 문제에서 text 정답을 찾는 것으로,   
+  task 자체를 학습하기 위해 input에 태스크에 대한 텍스트(cola, sst2 등)을 명시합니다.
+- BERT의 경우 인코더만 존재해 텍스트 입력에 대해 classification 또는 span prediction만 수행할 수 있지만,   
+  T5는 모든 NLP task에서 동일한 모델, loss, hyperparameter를 사용할 수 있습니다.
+- BERT나 GPT 같은 인코더, 디코더만 존재하는 구조보다 basic transformer 구조가 높은 성능을 보였습니다.
+- pre-training에서 noising된 input을 denoising하며 단어를 예측하는 방식이 가장 효율적인 방법입니다.
+- multi-task learning이 unsupervised pre-training과 비슷한 성능을 보였습니다.
+- **Modified MLM**은 BART처럼 연속된 토큰을 하나의 mask로 바꾸면서, MASS의 방식으로 mask 되지 않은 부분을 target에서 맞춥니다.
+
+### References
+- [[Paper Review] Transformer to T5 (XLNet, RoBERTa, MASS, BART, MT-DNN,T5)](https://youtu.be/v7diENO2mEA)
